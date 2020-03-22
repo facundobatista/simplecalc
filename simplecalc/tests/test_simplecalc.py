@@ -4,6 +4,8 @@
 
 """Tests for a simple calculator."""
 
+import math
+from decimal import Decimal
 from unittest import TestCase
 
 import simplecalc
@@ -14,17 +16,20 @@ class BaseTestCase(TestCase):
 
     def check(self, operations):
         for inp, result in operations:
-            if isinstance(result, type) and issubclass(result, Exception):
-                self.assertRaises(result, simplecalc.calc, inp)
-            else:
-                try:
-                    calculated = simplecalc.calc(inp)
-                except Exception as err:
-                    self.fail("Calculator exploded with %s when %r" % (
-                              err, inp))
+            with self.subTest(inp=inp, result=result):
+                if isinstance(result, type) and issubclass(result, Exception):
+                    self.assertRaises(result, simplecalc.calc, inp)
                 else:
-                    m = "%r gave %r (should: %r)" % (inp, calculated, result)
-                    self.assertEqual(calculated, result, m)
+                    try:
+                        calculated = simplecalc.calc(inp)
+                    except Exception as err:
+                        self.fail("Calculator exploded with %s when %r" % (
+                                  err, inp))
+                    else:
+                        msg = "%r gave %r (should: %r)" % (inp, calculated, result)
+                        if isinstance(result, str):
+                            result = Decimal(result)
+                        self.assertAlmostEqual(calculated, Decimal(result), places=17, msg=msg)
 
 
 class SimpleIntegersTestCase(BaseTestCase):
@@ -61,8 +66,8 @@ class SimpleIntegersTestCase(BaseTestCase):
         self.check([
             ('7 / 2', '3.5'),
             ('8 / 4', '2'),
-            ('2 / 17', '0.11764705882352941'),
-            ('2 / 124124124124', '1.6112903225822564e-11'),
+            ('2 / 17', Decimal(2) / 17),
+            ('2 / 124124124124', Decimal(2) / 124124124124),
         ])
 
     def test_exponentiation(self):
@@ -74,7 +79,8 @@ class SimpleIntegersTestCase(BaseTestCase):
             ('-3 ** 3', '-27'),
             ('10 ** -1', '0.1'),
             ('2 ** -2', '0.25'),
-            ('2 ** 1500', ArithmeticError),
+            ('2 ** 1500', Decimal(2) ** 1500),
+            ('2.5 ** 1500', Decimal('2.5') ** 1500),
         ])
 
 
@@ -147,24 +153,24 @@ class FunctionsTestCase(BaseTestCase):
     def test_frommath_operations(self):
         self.check([
             ('acos(1)', '0'),
-            ('acosh(2)', '1.3169578969248166'),
+            ('acosh(2)', '1.316957896924816573402949871'),
             ('asin(0)', '0'),
-            ('asinh(4)', '2.0947125472611012'),
-            ('atan(5)', '1.373400766945016'),
+            ('asinh(4)', '2.094712547261101232010105377'),
+            ('atan(5)', '1.373400766945015893938375484'),
             ('atanh(0)', '0'),
             ('ceil(6.1)', '7'),
-            ('cos(8)', '-0.14550003380861354'),
-            ('cosh(9)', '4051.5420254925943'),
-            ('degrees(10)', '572.9577951308232'),
-            ('exp(13)', '442413.3920089205'),
+            ('cos(8)', '-0.1455000338086135380777363935'),
+            ('cosh(9)', '4051.54202549259434817940928'),
+            ('degrees(10)', '572.9577951308232286464772187'),
+            ('exp(13)', '442413.3920089205033261027759'),
             ('factorial(16)', '20922789888000'),
             ('floor(1.7)', '1'),
             ('gamma(6)', '120'),
-            ('radians(32)', '0.5585053606381855'),
-            ('sin(33)', '0.9999118601072672'),
-            ('sinh(34)', '291730871263727.44'),
-            ('sqrt(35)', '5.916079783099616'),
-            ('tan(36)', '7.750470905699148'),
+            ('radians(32)', '0.5585053606381854551798937791'),
+            ('sin(33)', '0.9999118601072671808083214273'),
+            ('sinh(34)', '291730871263727.4375'),
+            ('sqrt(35)', '5.916079783099616042567328292'),
+            ('tan(36)', '7.750470905699147650125269138'),
             ('tanh(37)', '1'),
             ('trunc(38)', '38'),
             ('hypot(4, 3)', '5'),
@@ -172,24 +178,24 @@ class FunctionsTestCase(BaseTestCase):
             ('pow(2, 3)', '8'),
             # without parens also
             ('acos 1', '0'),
-            ('acosh 2', '1.3169578969248166'),
+            ('acosh 2', '1.316957896924816573402949871'),
             ('asin 0', '0'),
-            ('asinh 4', '2.0947125472611012'),
-            ('atan 5', '1.373400766945016'),
+            ('asinh 4', '2.094712547261101232010105377'),
+            ('atan 5', '1.373400766945015893938375484'),
             ('atanh 0', '0'),
             ('ceil 6.1', '7'),
-            ('cos 8', '-0.14550003380861354'),
-            ('cosh 9', '4051.5420254925943'),
-            ('degrees 10', '572.9577951308232'),
-            ('exp 13', '442413.3920089205'),
+            ('cos 8', '-0.1455000338086135380777363935'),
+            ('cosh 9', '4051.54202549259434817940928'),
+            ('degrees 10', '572.9577951308232286464772187'),
+            ('exp 13', '442413.3920089205033261027759'),
             ('factorial 16', '20922789888000'),
             ('floor 1.7', '1'),
             ('gamma 6', '120'),
-            ('radians 32', '0.5585053606381855'),
-            ('sin 33', '0.9999118601072672'),
-            ('sinh 34', '291730871263727.44'),
-            ('sqrt 35', '5.916079783099616'),
-            ('tan 36', '7.750470905699148'),
+            ('radians 32', '0.5585053606381854551798937791'),
+            ('sin 33', '0.9999118601072671808083214273'),
+            ('sinh 34', '291730871263727.4375'),
+            ('sqrt 35', '5.916079783099616042567328292'),
+            ('tan 36', '7.750470905699147650125269138'),
             ('tanh 37', '1'),
             ('trunc 38', '38'),
             ('hypot 4, 3', '5'),
@@ -212,7 +218,6 @@ class FunctionsTestCase(BaseTestCase):
     def test_frombuiltin(self):
         self.check([
             ('int(2.3)', '2'),
-            ('float(123)', '123'),
             ('int(44, 5)', '24'),
             ('round(12.1234, 2)', '12.12'),
             ('abs(-55)', '55'),
@@ -224,8 +229,8 @@ class ValuesTestCase(BaseTestCase):
 
     def test_basic(self):
         self.check([
-            ('e', '2.718281828459045'),
-            ('pi', '3.141592653589793'),
+            ('e', Decimal(math.e)),
+            ('pi', Decimal(math.pi)),
         ])
 
     def test_in_operations(self):
@@ -248,46 +253,46 @@ class ComparisonsTestCase(BaseTestCase):
 
     def test_lessthan(self):
         self.check([
-            ('2 < 1', 'False'),
-            ('2 < 3', 'True'),
-            ('4 + 2 < 6', 'False'),
+            ('2 < 1', False),
+            ('2 < 3', True),
+            ('4 + 2 < 6', False),
             ('2 + (5 < 6)', ValueError),
         ])
 
     def test_greaterthan(self):
         self.check([
-            ('7 > -8', 'True'),
-            ('7 > 8', 'False'),
-            ('0 > 0', 'False'),
+            ('7 > -8', True),
+            ('7 > 8', False),
+            ('0 > 0', False),
         ])
 
     def test_lessequalthan(self):
         self.check([
-            ('2 <= 3', 'True'),
-            ('2 <= 2', 'True'),
-            ('2 <= 1', 'False'),
+            ('2 <= 3', True),
+            ('2 <= 2', True),
+            ('2 <= 1', False),
         ])
 
     def test_greaterequalthan(self):
         self.check([
-            ('2 >= 1', 'True'),
-            ('2 >= 2', 'True'),
-            ('2 >= 3', 'False'),
+            ('2 >= 1', True),
+            ('2 >= 2', True),
+            ('2 >= 3', False),
         ])
 
     def test_equality(self):
         self.check([
-            ('2 == 2', 'True'),
-            ('2 == 1', 'False'),
-            ('-2 == 2', 'False'),
-            ('2 = 2', 'True'),
-            ('2 === 2', 'True'),
+            ('2 == 2', True),
+            ('2 == 1', False),
+            ('-2 == 2', False),
+            ('2 = 2', True),
+            ('2 === 2', True),
         ])
 
     def test_different(self):
         self.check([
-            ('2 != 1', 'True'),
-            ('2 != 2', 'False'),
-            ('2 != 3', 'True'),
-            ('2 <> 2', 'False'),
+            ('2 != 1', True),
+            ('2 != 2', False),
+            ('2 != 3', True),
+            ('2 <> 2', False),
         ])

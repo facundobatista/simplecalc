@@ -6,6 +6,7 @@
 
 import math
 import re
+from decimal import Decimal, getcontext
 
 from ply import lex, yacc
 
@@ -16,8 +17,8 @@ MAX_FACTORIAL_INP = 100
 
 # some available values for the expression
 ALLOWED_VALUES = {
-    'e': math.e,
-    'pi': math.pi,
+    'e': Decimal(math.e),
+    'pi': Decimal(math.pi),
 }
 
 # crazy regex to match a number; this comes from the Python's Decimal code,
@@ -29,15 +30,18 @@ RE_NUMBER = r"""        # A numeric string consists of:
     ((e|E)(?P<exp>[-+]?\d+))?  # followed by an optional exponent, or...
 """
 
+# decimal context
+deccontext = getcontext()
+
 
 # the functions that user can call; with a map from the name to
 # the real function and a possible limitation check
 def better_log(n, base=None):
     """A log function with better default."""
     if base is None:
-        r = math.log10(n)
+        r = Decimal(n).log10()
     else:
-        r = math.log(n, base)
+        r = Decimal(math.log(n, base))
     return r
 
 
@@ -46,6 +50,8 @@ def better_factorial(n):
     if n > MAX_FACTORIAL_INP:
         raise OverflowError("Factorial input too big (max=%d)" % (
                             MAX_FACTORIAL_INP,))
+    if int(n) != n:
+        raise ValueError("factorial() only accepts integral values")
     return math.factorial(n)
 
 
@@ -66,31 +72,30 @@ FUNCTIONS = {
     'asinh': math.asinh,
     'atan': math.atan,
     'atanh': math.atanh,
-    'ceil': math.ceil,
+    'ceil': math.ceil,  # uses Decimal's dunder method
     'cos': math.cos,
     'cosh': math.cosh,
     'degrees': math.degrees,
     'distance': math.hypot,
-    'exp': math.exp,
+    'exp': deccontext.exp,
     'factorial': better_factorial,
-    'float': float,
-    'floor': math.floor,
+    'floor': math.floor,  # uses Decimal's dunder method
     'gamma': math.gamma,
     'hypot': math.hypot,
     'int': better_int,
     'ln': math.log,
     'log': better_log,
     'log10': math.log10,
-    'log2': lambda n: math.log(n, 2),
-    'pow': math.pow,
+    'log2': lambda n: better_log(n, 2),
+    'pow': deccontext.power,
     'radians': math.radians,
     'round': round,
     'sin': math.sin,
     'sinh': math.sinh,
-    'sqrt': math.sqrt,
+    'sqrt': deccontext.sqrt,
     'tan': math.tan,
     'tanh': math.tanh,
-    'trunc': math.trunc,
+    'trunc': math.trunc,  # uses Decimal's dunder method
 }
 
 
@@ -145,9 +150,9 @@ class _CalcLexer(object):
         else:
             result = 0
         if fracpart:
-            result += float(fracpart) / 10 ** len(fracpart)
+            result += Decimal(fracpart) / 10 ** len(fracpart)
         if expart:
-            result *= 10 ** int(expart)
+            result *= Decimal(10) ** int(expart)
 
         t.value = result
         return t
@@ -213,11 +218,11 @@ class _CalcParser(object):
 
     def p_term_div(self, p):
         'expression : expression DIVIDE expression'
-        p[0] = p[1] / float(p[3])
+        p[0] = p[1] / Decimal(p[3])
 
     def p_expression_power(self, p):
         'expression : expression POW expression'
-        p[0] = p[1] ** float(p[3])
+        p[0] = p[1] ** Decimal(p[3])
 
     def p_expression_factorial(self, p):
         'expression : expression FACTORIAL'
@@ -237,7 +242,7 @@ class _CalcParser(object):
             func = FUNCTIONS[func_name]
         except KeyError:
             raise ValueError("Unknown %r function" % (func_name,))
-        return func(*args)
+        return Decimal(func(*args))
 
     def p_name_function_double_commaseparated(self, p):
         'expression : NAME LPAREN expression COMMA expression RPAREN'
@@ -303,14 +308,7 @@ _cp = _CalcParser()
 def calc(source):
     """Parse and calculate what's in the source text."""
     resp = _cp.parse(source.strip().lower())
-    print("====== orig resp", repr(resp))
-    if isinstance(resp, float):
-        if resp.is_integer():
-            resp = int(resp)
-        else:
-            resp = round(resp, 19)
-    print("====== fixd resp", repr(resp))
-    return str(resp)
+    return resp
 
 
 if __name__ == '__main__':
