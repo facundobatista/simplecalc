@@ -1,15 +1,13 @@
 # Copyright 2015-2018 Canonical Ltd.
+# Copyright 2020 Facundo Batista
 # All Rights Reserved
 
 """A simple calculator."""
-
-from __future__ import division
 
 import math
 import re
 
 from ply import lex, yacc
-
 
 __all__ = ['calc']
 
@@ -24,7 +22,7 @@ ALLOWED_VALUES = {
 
 # crazy regex to match a number; this comes from the Python's Decimal code,
 # adapted to support also commas
-RE_NUMBER = """        # A numeric string consists of:
+RE_NUMBER = r"""        # A numeric string consists of:
     (?=\d|\.\d|\,\d)           # starts with a number or a point/comma
     (?P<int>\d*)               # having a (possibly empty) integer part
     ((\.|\,)(?P<frac>\d*))?    # followed by an optional fractional part
@@ -305,11 +303,16 @@ _cp = _CalcParser()
 def calc(source):
     """Parse and calculate what's in the source text."""
     resp = _cp.parse(source.strip().lower())
-    if isinstance(resp, float) and resp.is_integer():
-        resp = int(resp)
+    print("====== orig resp", repr(resp))
+    if isinstance(resp, float):
+        if resp.is_integer():
+            resp = int(resp)
+        else:
+            resp = round(resp, 19)
+    print("====== fixd resp", repr(resp))
     return str(resp)
 
 
 if __name__ == '__main__':
     import sys
-    print calc(" ".join(sys.argv[1:]))
+    print(calc(" ".join(sys.argv[1:])))
