@@ -23,7 +23,7 @@ your own risk, of course.
 
 It can also be used as a script::
 
-    $ python simplecalc.py "3 * cos(pi)"
+    $ simplecalc "3 * cos(pi)"
     -3
 
 

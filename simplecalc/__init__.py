@@ -6,6 +6,7 @@
 
 import math
 import re
+import sys
 from decimal import Decimal, getcontext
 
 from ply import lex, yacc
@@ -311,6 +312,26 @@ def calc(source):
     return resp
 
 
+USAGE = """
+Usage: simplecalc <expression>
+   ej: simplecalc "6 * sqrt(7) ** (3 + cos(pi))"
+"""
+
+
+def main():
+    """Main entry point to run as script. Use `calc` instead if as module."""
+    params = sys.argv[1:]
+    if params:
+        expression = " ".join(params)
+        try:
+            result = calc(expression)
+        except ValueError:
+            print("ERROR parsing", repr(expression))
+        else:
+            print(result)
+    else:
+        print(USAGE)
+
+
 if __name__ == '__main__':
-    import sys
     print(calc(" ".join(sys.argv[1:])))
