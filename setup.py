@@ -12,7 +12,7 @@ with open("requirements.txt", "rt", encoding='utf8') as fh:
     requirements = fh.read().split('\n')
 
 setuptools.setup(
-    name="simplecalc",
+    name="pysimplecalc",
     version="1",
     author="Facundo Batista",
     author_email="facundo@taniquetil.com.ar",

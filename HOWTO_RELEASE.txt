@@ -6,4 +6,4 @@ PyPI:
 
     rm -rf dist/
     ./setup.py sdist
-    fades -d twine -x twine upload dist/unitconv-*.tar.gz
+    fades -d twine -x twine upload dist/pysimplecalc-*.tar.gz
